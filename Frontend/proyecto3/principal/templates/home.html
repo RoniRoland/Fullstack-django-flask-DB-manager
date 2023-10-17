@@ -1,0 +1,29 @@
+{% extends "base.html" %} {% block title %} inicio {% endblock %}
+
+{% block content %}
+<div class="px-4 pt-5 my-5 text-center border-bottom">
+    <h1 class="display-4 fw-bold text-body-emphasis">Manjeando Informacion de Tweets</h1>
+    <div class="col-lg-6 mx-auto">
+        <p class="lead mb-4">Bienvenidos a Tecnologias Chapnias S.A. somos una empresa Guatemalteca dedicada al analisis
+            de datos de diversos tipos de tweets. Se analiza el impacto de tweets de diferentes rangos de tiempo y se
+            verifican si son positivos o negativos.
+        </p>
+        <p class="lead mb-4">Para empezar a utilizar nuestro servicios, debes de cargar un archivo xml con la
+            informacion de los tweerts y otro archivo xml que contiene la informacion del impacto de tweets positivos o
+            negativos.
+        </p>
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mb-5">
+            <a href="{% url 'carga' %}"><button type="button" class="btn btn-primary btn-lg px-4 me-sm-3">Cargar XML
+                    Tweets</button></a>
+
+            <button type="button" class="btn btn-outline-secondary btn-lg px-4">Cargar Configuracion XML</button>
+        </div>
+    </div>
+    <div class="overflow-hidden" style="max-height: 30vh;">
+        <div class="container px-5">
+            <img src="/static/img/tmd.png" class="img-fluid border rounded-3 shadow-lg mb-4" alt="Example image"
+                width="490" height="10" loading="lazy">
+        </div>
+    </div>
+</div>
+{% endblock %}
