@@ -22,14 +22,13 @@
             <ul class="nav nav-pills">
                 <li class="nav-item"><a href="{% url 'home' %}" class="nav-link active" aria-current="page">Home</a>
                 </li>
-                <li class="nav-item"><a href="#" class="nav-link">Resetear Datos</a></li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                         aria-expanded="false">
                         Peticiones
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Consultar Hashtags</a></li>
+                        <li><a class="dropdown-item" href="{% url 'consultar_hashtags' %}">Consultar Hashtags</a></li>
                         <li><a class="dropdown-item" href="#">Consultar Menciones</a></li>
                         <li><a class="dropdown-item" href="#">Consultar Sentimientos en mensajes</a></li>
 

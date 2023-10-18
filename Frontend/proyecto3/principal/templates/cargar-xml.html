@@ -1,0 +1,64 @@
+{% extends "base.html" %} {% block title %} Cargar Archivo {% endblock %}
+
+{% block content %}
+<div class="container px-4 py-5" id="featured-3">
+    <h2 class="pb-2 border-bottom">Carga de Archivo Tweets XML</h2>
+
+
+    <br>
+    <form method="post" enctype="multipart/form-data">
+        <div class="input-group">
+            {% csrf_token %}
+            <input type="file" name="archivo" class="form-control" id="inputGroupFile04"
+                aria-describedby="inputGroupFileAddon04" aria-label="Upload">
+            <button class="btn btn-outline-success" type="submit" id="inputGroupFileAddon04">Cargar Archivo</button>
+        </div>
+    </form>
+
+
+    <br>
+
+    <div class="row">
+        <div class="col">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="Leave a comment here" id="floatingTextarea1"
+                    style="height: 500px" readonly>
+                {% if base_content %}
+                {{ base_content }}
+                {% endif %}
+            </textarea>
+                <label for="floatingTextarea1">Base de Datos</label>
+            </div>
+        </div>
+        <div class="col">
+            <div class="form-floating">
+                <textarea class="form-control" placeholder="Leave a comment here" id="floatingTextarea2"
+                    style="height: 500px" readonly>
+                {% if resumen_content %}
+                {{ resumen_content }}
+                {% endif %}
+            </textarea>
+                <label for="floatingTextarea2">Resumen</label>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+    <br>
+
+    <form method="post" action="{% url 'resetear_datos' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Resetear Datos</button>
+    </form>
+
+
+</div>
+
+
+{% endblock %}

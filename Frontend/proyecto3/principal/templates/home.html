@@ -13,11 +13,19 @@
             negativos.
         </p>
         <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mb-5">
-            <a href="{% url 'carga' %}"><button type="button" class="btn btn-primary btn-lg px-4 me-sm-3">Cargar XML
+            <a href="{% url 'cargar-xml' %}"><button type="button" class="btn btn-primary btn-lg px-4 me-sm-3">Cargar
+                    XML
                     Tweets</button></a>
-
-            <button type="button" class="btn btn-outline-secondary btn-lg px-4">Cargar Configuracion XML</button>
+            <a href="{% url 'cargar-configuracion' %}"><button type="button" class="btn btn-primary btn-lg px-4">Cargar
+                    Configuracion XML</button></a>
+            <br>
         </div>
+        <br>
+        <form method="post" action="{% url 'resetear_datos' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger btn-lg px-4">Resetear Datos</button>
+        </form>
+        <br>
     </div>
     <div class="overflow-hidden" style="max-height: 30vh;">
         <div class="container px-5">

@@ -1,0 +1,37 @@
+{% extends "base.html" %} {% block title %} Consulta Hashtags {% endblock %}
+
+{% block content %}
+<div class="container px-4 py-5" id="featured-3">
+    <h2 class="pb-2 border-bottom">Consulta de Hashtags</h2>
+    <br>
+    <br>
+    <form action="{% url 'consultar_hashtags' %}" method="get">
+        <label for="fecha_inicio">Fecha de inicio:</label>
+        <input type="date" id="fecha_inicio" name="fecha_inicio" required>
+        <label for="fecha_fin">Fecha de fin:</label>
+        <input type="date" id="fecha_fin" name="fecha_fin" required>
+        <button class="btn btn-outline-success" type="submit" id="inputGroupFileAddon04">Consultar</button>
+
+
+    </form>
+    <br>
+    <div class="col-lg-6 mx-auto">
+        <br>
+        {% if hashtags_por_fecha %}
+        {% for data in hashtags_por_fecha %}
+        <h2>Fecha: {{ data.fecha }}</h2>
+        <ol class="list-group list-group-numbered">
+            {% for hashtag, count in data.hashtags.items %}
+            <li class="list-group-item">{{ hashtag }}: {{ count }} mensajes</li>
+            {% endfor %}
+        </ol>
+        <br>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+
+
+
+</div>
+{% endblock %}
