@@ -9,6 +9,9 @@ class Mensajes:
     def obtener_hashtags(self):
         return re.findall(r"#\w+", self.texto)
 
+    def obtener_usuarios_mencionados(self):
+        return re.findall(r"@\w+", self.texto)
+
     def resetear(self):
         self.fecha = ""
         self.texto = ""
