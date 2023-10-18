@@ -219,6 +219,47 @@ def consultar_hashtags():
     return jsonify({"hashtags_por_fecha": result})
 
 
+@app.route("/consultar-usuarios", methods=["GET"])
+def consultar_usuarios():
+    fecha_inicio = request.args.get("fecha_inicio")
+    fecha_fin = request.args.get("fecha_fin")
+
+    if not fecha_inicio or not fecha_fin:
+        return jsonify({"error": "Las fechas de inicio y fin son requeridas"})
+
+    # Convertir las fechas de inicio y fin a objetos datetime
+    fecha_inicio = datetime.strptime(fecha_inicio, "%Y-%m-%d")
+    fecha_fin = datetime.strptime(fecha_fin, "%Y-%m-%d")
+
+    # Procesa el archivo uploaded.xml
+    tree = ET.parse("uploaded.xml")
+    root = tree.getroot()
+    usuarios_por_fecha = {}
+
+    for mensaje_elem in root.findall(".//MENSAJE"):
+        fecha_str = mensaje_elem.find("FECHA").text.split(", ")[1]
+        fecha = datetime.strptime(fecha_str, "%d/%m/%Y")
+        texto = mensaje_elem.find("TEXTO").text
+
+        if fecha_inicio <= fecha <= fecha_fin:
+            mensaje = Mensajes(fecha, texto)
+            usuarios_mencionados = mensaje.obtener_usuarios_mencionados()
+            for usuario in usuarios_mencionados:
+                if fecha not in usuarios_por_fecha:
+                    usuarios_por_fecha[fecha] = {}
+                if usuario in usuarios_por_fecha[fecha]:
+                    usuarios_por_fecha[fecha][usuario] += 1
+                else:
+                    usuarios_por_fecha[fecha][usuario] = 1
+
+    # Formatear las fechas como cadenas de texto y usuarios
+    result = []
+    for fecha, usuarios in usuarios_por_fecha.items():
+        fecha_str = fecha.strftime("%d/%m/%Y")
+        result.append({"fecha": fecha_str, "usuarios": usuarios})
+    return jsonify({"usuarios_por_fecha": result})
+
+
 @app.route("/resetear-datos", methods=["POST"])
 def resetear_datos():
     # Define la ruta al archivo resumen.xml
