@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.shortcuts import render
 import requests
 from pathlib import Path
@@ -119,12 +120,17 @@ def consultar_hashtags(request):
                 # print("Respuesta JSON:", data)
 
                 # Asegurarse de que "hashtags_por_fecha" sea una lista
-                hashtags_por_fecha = data.get("hashtags_por_fecha", [])
+                # hashtags_por_fecha = data.get("hashtags_por_fecha", [])
+                # Ordena la lista de diccionarios por fecha (asumiendo que las fechas son strings en el formato "dd/mm/yyyy")
+                sorted_data = sorted(
+                    data["hashtags_por_fecha"],
+                    key=lambda x: datetime.strptime(x["fecha"], "%d/%m/%Y"),
+                )
 
                 return render(
                     request,
                     "consul_hash.html",
-                    {"hashtags_por_fecha": hashtags_por_fecha},
+                    {"hashtags_por_fecha": sorted_data},
                 )
 
     return render(request, "consul_hash.html", {"hashtags_por_fecha": None})
