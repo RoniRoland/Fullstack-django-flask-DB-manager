@@ -134,3 +134,67 @@ def consultar_hashtags(request):
                 )
 
     return render(request, "consul_hash.html", {"hashtags_por_fecha": None})
+
+
+def consultar_usuario(request):
+    if request.method == "GET":
+        fecha_inicio = request.GET.get("fecha_inicio")
+        fecha_fin = request.GET.get("fecha_fin")
+
+        if fecha_inicio and fecha_fin:
+            # Llamar a la API de Flask para obtener los usuarios mencionados
+            api_url = "http://127.0.0.1:5000/consultar-usuarios"
+            params = {"fecha_inicio": fecha_inicio, "fecha_fin": fecha_fin}
+            response = requests.get(api_url, params=params)
+
+            if response.status_code == 200:
+                data = response.json()
+
+                # Asegurarse de que "usuarios_por_fecha" sea una lista
+                usuarios_por_fecha = data.get("usuarios_por_fecha", [])
+
+                # Ordena la lista de diccionarios por fecha (asumiendo que las fechas son strings en el formato "dd/mm/yyyy")
+                sorted_data = sorted(
+                    usuarios_por_fecha,
+                    key=lambda x: datetime.strptime(x["fecha"], "%d/%m/%Y"),
+                )
+
+                return render(
+                    request,
+                    "consul_usuario.html",
+                    {"usuarios_por_fecha": sorted_data},
+                )
+
+    return render(request, "consul_usuario.html", {"usuarios_por_fecha": None})
+
+
+def consultar_sent(request):
+    if request.method == "GET":
+        fecha_inicio = request.GET.get("fecha_inicio")
+        fecha_fin = request.GET.get("fecha_fin")
+
+        if fecha_inicio and fecha_fin:
+            # Llamar a la API de Flask para obtener los hashtags
+            api_url = "http://127.0.0.1:5000/consultar-sent"
+            params = {"fecha_inicio": fecha_inicio, "fecha_fin": fecha_fin}
+            response = requests.get(api_url, params=params)
+
+            if response.status_code == 200:
+                data = response.json()
+                # print("Respuesta JSON:", data)
+
+                # Asegurarse de que "hashtags_por_fecha" sea una lista
+                # hashtags_por_fecha = data.get("hashtags_por_fecha", [])
+                # Ordena la lista de diccionarios por fecha (asumiendo que las fechas son strings en el formato "dd/mm/yyyy")
+                sorted_data = sorted(
+                    data["hashtags_por_fecha"],
+                    key=lambda x: datetime.strptime(x["fecha"], "%d/%m/%Y"),
+                )
+
+                return render(
+                    request,
+                    "consul_sent.html",
+                    {"hashtags_por_fecha": sorted_data},
+                )
+
+    return render(request, "consul_hash.html", {"hashtags_por_fecha": None})
