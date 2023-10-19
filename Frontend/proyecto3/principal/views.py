@@ -149,6 +149,7 @@ def consultar_usuario(request):
 
             if response.status_code == 200:
                 data = response.json()
+                print("Respuesta JSON:", data)
 
                 # Asegurarse de que "usuarios_por_fecha" sea una lista
                 usuarios_por_fecha = data.get("usuarios_por_fecha", [])

@@ -202,19 +202,24 @@ def consultar_hashtags():
         if fecha_inicio <= fecha <= fecha_fin:
             mensaje = Mensajes(fecha, texto)
             hashtags = mensaje.obtener_hashtags()
+
+            if fecha not in hashtags_por_fecha:
+                hashtags_por_fecha[fecha] = {}
+
+            hashtag_registrados = set()
             for hashtag in hashtags:
-                if fecha not in hashtags_por_fecha:
-                    hashtags_por_fecha[fecha] = {}
-                if hashtag in hashtags_por_fecha[fecha]:
-                    hashtags_por_fecha[fecha][hashtag] += 1
-                else:
-                    hashtags_por_fecha[fecha][hashtag] = 1
+                if hashtag not in hashtag_registrados:
+                    hashtag_registrados.add(hashtag)
+                    if hashtag in hashtags_por_fecha[fecha]:
+                        hashtags_por_fecha[fecha][hashtag] += 1
+                    else:
+                        hashtags_por_fecha[fecha][hashtag] = 1
 
     # Formatear las fechas como cadenas de texto
     result = []
-    for fecha, hashtags in hashtags_por_fecha.items():
+    for fecha, _hashtag in hashtags_por_fecha.items():
         fecha_str = fecha.strftime("%d/%m/%Y")
-        result.append({"fecha": fecha_str, "hashtags": hashtags})
+        result.append({"fecha": fecha_str, "hashtags": _hashtag})
     # print("hashtags_por_fecha:", hashtags_por_fecha)
     return jsonify({"hashtags_por_fecha": result})
 
@@ -301,13 +306,18 @@ def consultar_usuarios():
         if fecha_inicio <= fecha <= fecha_fin:
             mensaje = Mensajes(fecha, texto)
             usuarios_mencionados = mensaje.obtener_usuarios_mencionados()
+
+            if fecha not in usuarios_por_fecha:
+                usuarios_por_fecha[fecha] = {}
+
+            usuarios_registrados = set()
             for usuario in usuarios_mencionados:
-                if fecha not in usuarios_por_fecha:
-                    usuarios_por_fecha[fecha] = {}
-                if usuario in usuarios_por_fecha[fecha]:
-                    usuarios_por_fecha[fecha][usuario] += 1
-                else:
-                    usuarios_por_fecha[fecha][usuario] = 1
+                if usuario not in usuarios_registrados:
+                    usuarios_registrados.add(usuario)
+                    if usuario in usuarios_por_fecha[fecha]:
+                        usuarios_por_fecha[fecha][usuario] += 1
+                    else:
+                        usuarios_por_fecha[fecha][usuario] = 1
 
     # Formatear las fechas como cadenas de texto y usuarios
     result = []
