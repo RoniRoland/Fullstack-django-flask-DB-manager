@@ -25,3 +25,4 @@ class Mensajes:
     def resetear(self):
         self.fecha = ""
         self.texto = ""
+        self.id = 0
