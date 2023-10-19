@@ -5,7 +5,7 @@
     <h2 class="pb-2 border-bottom">Consulta de Sentimientos en Mensajes</h2>
     <br>
     <br>
-    <form action="{% url 'consultar_hashtags' %}" method="get">
+    <form action="{% url 'consultar_sentimientos' %}" method="get">
         <label for="fecha_inicio">Fecha de inicio:</label>
         <input type="date" id="fecha_inicio" name="fecha_inicio" required>
         <label for="fecha_fin">Fecha de fin:</label>
@@ -17,16 +17,22 @@
     <br>
     <div class="col-lg-6 mx-auto">
         <br>
-        {% if hashtags_por_fecha %}
-        {% for data in hashtags_por_fecha %}
-        <h2>Fecha: {{ data.fecha }}</h2>
-        <ol class="list-group list-group-numbered">
-            {% for hashtag, count in data.hashtags.items %}
-            <li class="list-group-item">{{ hashtag }}: {{ count }} mensajes</li>
+        {% if sentimientos_por_fecha %}
+        <h2>Resultados</h2>
+        <ul class="list-group">
+            {% for sentimiento in sentimientos_por_fecha %}
+            <li class="list-group-item">
+                {% if sentimiento.sentimiento == "positivo" %}
+                Mensajes con sentimiento positivo: {{ sentimiento.count }} mensajes
+                {% elif sentimiento.sentimiento == "negativo" %}
+                Mensajes con sentimiento negativo: {{ sentimiento.count }} mensajes
+                {% elif sentimiento.sentimiento == "neutro" %}
+                Mensajes neutros: {{ sentimiento.count }} mensajes
+                {% endif %}
+            </li>
             {% endfor %}
-        </ol>
+        </ul>
         <br>
-        {% endfor %}
         {% endif %}
     </div>
 

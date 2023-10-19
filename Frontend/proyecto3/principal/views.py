@@ -174,27 +174,22 @@ def consultar_sent(request):
         fecha_fin = request.GET.get("fecha_fin")
 
         if fecha_inicio and fecha_fin:
-            # Llamar a la API de Flask para obtener los hashtags
-            api_url = "http://127.0.0.1:5000/consultar-sent"
+            # Llamar a la API de Flask para obtener los sentimientos
+            api_url = "http://127.0.0.1:5000/consultar-sentimientos"
             params = {"fecha_inicio": fecha_inicio, "fecha_fin": fecha_fin}
             response = requests.get(api_url, params=params)
 
             if response.status_code == 200:
                 data = response.json()
-                # print("Respuesta JSON:", data)
+                print("Respuesta JSON:", data)
 
-                # Asegurarse de que "hashtags_por_fecha" sea una lista
-                # hashtags_por_fecha = data.get("hashtags_por_fecha", [])
-                # Ordena la lista de diccionarios por fecha (asumiendo que las fechas son strings en el formato "dd/mm/yyyy")
-                sorted_data = sorted(
-                    data["hashtags_por_fecha"],
-                    key=lambda x: datetime.strptime(x["fecha"], "%d/%m/%Y"),
-                )
+                # Asegurarse de que "sentimientos_por_fecha" sea una lista
+                sentimientos_por_fecha = data.get("sentimientos_por_fecha", [])
 
                 return render(
                     request,
                     "consul_sent.html",
-                    {"hashtags_por_fecha": sorted_data},
+                    {"sentimientos_por_fecha": sentimientos_por_fecha},
                 )
 
-    return render(request, "consul_hash.html", {"hashtags_por_fecha": None})
+    return render(request, "consul_sent.html", {"sentimientos_por_fecha": None})

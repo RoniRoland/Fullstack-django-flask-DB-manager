@@ -10,6 +10,10 @@ urlpatterns = [
     ),
     path("consultar-hashtags/", views.consultar_hashtags, name="consultar_hashtags"),
     path("consultar-usuario/", views.consultar_usuario, name="consultar_usuario"),
-    path("consultar-sent/", views.consultar_sent, name="consultar_sent"),
+    path(
+        "consultar-sentimientos/",
+        views.consultar_sent,
+        name="consultar_sentimientos",
+    ),
     path("resetear-datos/", views.resetear_datos, name="resetear_datos"),
 ]
