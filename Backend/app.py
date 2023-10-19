@@ -130,46 +130,92 @@ def cargar_configuracion():
     try:
         uploaded_config_file = request.files["config_file"]
         if uploaded_config_file.filename != "":
-            # Guarda el archivo de configuración XML en el servidor
-            uploaded_config_file.save("configuracion.xml")
+            # Guardar el archivo XML de configuración en el servidor
+            uploaded_config_file.save("nuevo_config.xml")
 
-            # Procesa el archivo de configuración
-            tree_config = ET.parse("configuracion.xml")
-            root_config = tree_config.getroot()
+            # Verificar si el archivo configuracion.xml existe
+            config_exists = os.path.exists("configuracion.xml")
 
+            # Cargar las palabras de sentimientos positivos y negativos
             sentimientos = Sentimientos()
 
-            for palabra in root_config.find(".//sentimientos_positivos"):
-                sentimientos.palabras_positivas.add(palabra.text.lower())
+            if config_exists:
+                # Cargar palabras existentes desde configuracion.xml
+                tree = ET.parse("configuracion.xml")
+                root = tree.getroot()
 
-            for palabra in root_config.find(".//sentimientos_negativos"):
-                sentimientos.palabras_negativas.add(palabra.text.lower())
+                for palabra_elem in root.findall(".//sentimientos_positivos/palabra"):
+                    palabra = palabra_elem.text.strip()
+                    sentimientos.palabras_positivas.add(palabra)
 
-            # Obtener el recuento de palabras positivas y negativas
-            palabras_positivas_contador = len(sentimientos.palabras_positivas)
-            palabras_negativas_contador = len(sentimientos.palabras_negativas)
+                for palabra_elem in root.findall(".//sentimientos_negativos/palabra"):
+                    palabra = palabra_elem.text.strip()
+                    sentimientos.palabras_negativas.add(palabra)
 
-            # Genera el archivo resumenConfig.xml
+            # Cargar las palabras desde el archivo recién cargado
+            tree_nuevo = ET.parse("nuevo_config.xml")
+            root_nuevo = tree_nuevo.getroot()
+
+            for palabra_elem in root_nuevo.findall(".//sentimientos_positivos/palabra"):
+                palabra = palabra_elem.text.strip()
+                sentimientos.palabras_positivas.add(palabra)
+
+            for palabra_elem in root_nuevo.findall(".//sentimientos_negativos/palabra"):
+                palabra = palabra_elem.text.strip()
+                sentimientos.palabras_negativas.add(palabra)
+
+            # Actualizar el archivo configuracion.xml
+            resumen = ET.Element("diccionario")
+            sentimientos_positivos = ET.SubElement(resumen, "sentimientos_positivos")
+            for palabra in sentimientos.palabras_positivas:
+                palabra_elem = ET.SubElement(sentimientos_positivos, "palabra")
+                palabra_elem.text = palabra
+
+            sentimientos_negativos = ET.SubElement(resumen, "sentimientos_negativos")
+            for palabra in sentimientos.palabras_negativas:
+                palabra_elem = ET.SubElement(sentimientos_negativos, "palabra")
+                palabra_elem.text = palabra
+
+            tree = ET.ElementTree(resumen)
+            tree.write("configuracion.xml")
+
+            # Contar las palabras positivas y negativas
+            palabras_positivas_rechazadas = len(sentimientos.palabras_positivas) - len(
+                sentimientos.palabras_positivas
+            )
+            palabras_negativas_rechazadas = len(sentimientos.palabras_negativas) - len(
+                sentimientos.palabras_negativas
+            )
+
+            # Crear el archivo resumenConfig.xml
             resumen_config = ET.Element("CONFIG_RECIBIDA")
-            palabras_positivas_elem = ET.SubElement(
-                resumen_config, "PALABRAS_POSITIVAS"
+            ET.SubElement(resumen_config, "PALABRAS_POSITIVAS").text = str(
+                len(sentimientos.palabras_positivas)
             )
-            palabras_positivas_elem.text = str(palabras_positivas_contador)
-            palabras_negativas_elem = ET.SubElement(
-                resumen_config, "PALABRAS_NEGATIVAS"
+            ET.SubElement(resumen_config, "PALABRAS_POSITIVAS_RECHAZADA").text = str(
+                palabras_positivas_rechazadas
             )
-            palabras_negativas_elem.text = str(palabras_negativas_contador)
+            ET.SubElement(resumen_config, "PALABRAS_NEGATIVAS").text = str(
+                len(sentimientos.palabras_negativas)
+            )
+            ET.SubElement(resumen_config, "PALABRAS_NEGATIVAS_RECHAZADA").text = str(
+                palabras_negativas_rechazadas
+            )
 
-            tree = ET.ElementTree(resumen_config)
-            tree.write("resumenConfig.xml")
+            tree_resumen_config = ET.ElementTree(resumen_config)
+            tree_resumen_config.write("resumenConfig.xml")
+
+            # Eliminar el archivo temporal del nuevo archivo cargado
+            os.remove("nuevo_config.xml")
 
             return jsonify(
-                {"message": "Archivo de configuración procesado y resumen generado."}
+                {
+                    "message": "Archivo de configuración XML procesado y resumen generado."
+                }
             )
-
         else:
             return jsonify(
-                {"error": "No se ha seleccionado un archivo de configuración."}
+                {"error": "No se ha seleccionado un archivo XML de configuración."}
             )
 
     except Exception as e:
@@ -349,6 +395,9 @@ def resetear_datos():
 
     mensaje = Mensajes("", "")
     mensaje.resetear()
+    sent = Sentimientos("", "")
+    sent.resetear_sentimientos()
+
     return "Datos reseteados correctamente", 200
 
 

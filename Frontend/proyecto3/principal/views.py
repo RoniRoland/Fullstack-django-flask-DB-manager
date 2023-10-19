@@ -43,6 +43,7 @@ def cargar_archivo(request):
 
             # Formatea el contenido XML
             resumen_content = xml.dom.minidom.parseString(resumen_content).toprettyxml()
+            base_content = xml.dom.minidom.parseString(base_content).toprettyxml()
 
     return render(
         request,
@@ -81,6 +82,8 @@ def cargar_configuracion(request):
             resumen_config_content = xml.dom.minidom.parseString(
                 resumen_config_content
             ).toprettyxml()
+
+            config_content = xml.dom.minidom.parseString(config_content).toprettyxml()
 
     return render(
         request,
