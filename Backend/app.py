@@ -5,6 +5,7 @@ from pathlib import Path
 from flask_cors import CORS
 import xml.etree.ElementTree as ET
 from Mensaje import Mensajes
+from Sentimiento import Sentimientos
 import re
 
 
@@ -18,29 +19,59 @@ def cargar_xml():
         uploaded_file = request.files["archivo"]
         if uploaded_file.filename != "":
             # Guardar el archivo XML en el servidor
-            uploaded_file.save("uploaded.xml")
+            uploaded_file.save("nuevo_archivo.xml")
 
-            # Procesar el archivo XML
+            # Crear una lista para almacenar los mensajes existentes o nuevos mensajes
             mensajes = []
-            tree = ET.parse("uploaded.xml")
-            root = tree.getroot()
-            for mensaje_elem in root.findall(".//MENSAJE"):
+
+            # Verificar si el archivo uploaded.xml existe
+            uploaded_exists = os.path.exists("uploaded.xml")
+
+            if uploaded_exists:
+                # Cargar los mensajes existentes desde uploaded.xml
+                tree = ET.parse("uploaded.xml")
+                root = tree.getroot()
+                for mensaje_elem in root.findall(".//MENSAJE"):
+                    fecha = mensaje_elem.find("FECHA").text
+                    texto = mensaje_elem.find("TEXTO").text
+                    mensajes.append(Mensajes(fecha, texto))
+
+            # Cargar los nuevos mensajes desde el archivo recién cargado
+            tree_nuevo = ET.parse("nuevo_archivo.xml")
+            root_nuevo = tree_nuevo.getroot()
+            for mensaje_elem in root_nuevo.findall(".//MENSAJE"):
                 fecha = mensaje_elem.find("FECHA").text
                 texto = mensaje_elem.find("TEXTO").text
-                mensajes.append(Mensajes(fecha, texto))
+                mensaje_nuevo = Mensajes(fecha, texto)
 
-            # Crear un elemento raíz para el archivo resumen.xml
-            resumen = ET.Element("MENSAJES_RECIBIDOS")
+                # Verificar si el mensaje ya existe en la lista de mensajes
+                if mensaje_nuevo not in mensajes:
+                    mensajes.append(mensaje_nuevo)
+
+            # Guardar todos los mensajes en uploaded.xml (sobrescribirlo o crearlo si no existe)
+            resumen = ET.Element("MENSAJES")
+            for mensaje in mensajes:
+                mensaje_elem = ET.SubElement(resumen, "MENSAJE")
+                fecha_elem = ET.SubElement(mensaje_elem, "FECHA")
+                fecha_elem.text = mensaje.fecha
+                texto_elem = ET.SubElement(mensaje_elem, "TEXTO")
+                texto_elem.text = mensaje.texto
+
+            tree = ET.ElementTree(resumen)
+            tree.write("uploaded.xml")
+
+            # Crear el archivo resumen.xml con la información de los mensajes
+            resumen_xml = ET.Element("MENSAJES_RECIBIDOS")
             fecha_actual = ""
+            mensajes_en_intervalo = 0
             usuarios_mencionados = set()
             hashtags_incluidos = set()
 
             for mensaje in mensajes:
                 fecha = mensaje.fecha.split(", ")[1]
                 if fecha != fecha_actual:
-                    # Si cambió la fecha, crear un nuevo intervalo
                     if fecha_actual:
-                        tiempo = ET.SubElement(resumen, "TIEMPO")
+                        tiempo = ET.SubElement(resumen_xml, "TIEMPO")
                         fecha_elem = ET.SubElement(tiempo, "FECHA")
                         fecha_elem.text = fecha_actual
                         msj_recibidos = ET.SubElement(tiempo, "MSJ_RECIBIDOS")
@@ -70,8 +101,7 @@ def cargar_xml():
                     )
                 )
 
-            # Agregar el último intervalo
-            tiempo = ET.SubElement(resumen, "TIEMPO")
+            tiempo = ET.SubElement(resumen_xml, "TIEMPO")
             fecha_elem = ET.SubElement(tiempo, "FECHA")
             fecha_elem.text = fecha_actual
             msj_recibidos = ET.SubElement(tiempo, "MSJ_RECIBIDOS")
@@ -81,11 +111,13 @@ def cargar_xml():
             hash_incluidos = ET.SubElement(tiempo, "HASH_INCLUIDOS")
             hash_incluidos.text = str(len(hashtags_incluidos))
 
-            tree = ET.ElementTree(resumen)
-            tree.write("resumen.xml")
+            tree_resumen = ET.ElementTree(resumen_xml)
+            tree_resumen.write("resumen.xml")
+
+            # Eliminar el archivo temporal del nuevo archivo cargado
+            os.remove("nuevo_archivo.xml")
 
             return jsonify({"message": "Archivo XML procesado y resumen generado."})
-
         else:
             return jsonify({"error": "No se ha seleccionado un archivo XML."})
 
@@ -105,49 +137,17 @@ def cargar_configuracion():
             tree_config = ET.parse("configuracion.xml")
             root_config = tree_config.getroot()
 
-            palabras_positivas = set()
-            palabras_negativas = set()
+            sentimientos = Sentimientos()
 
             for palabra in root_config.find(".//sentimientos_positivos"):
-                palabras_positivas.add(palabra.text.lower())
+                sentimientos.palabras_positivas.add(palabra.text.lower())
+
             for palabra in root_config.find(".//sentimientos_negativos"):
-                palabras_negativas.add(palabra.text.lower())
+                sentimientos.palabras_negativas.add(palabra.text.lower())
 
-            # print(palabras_positivas)  # Agrega esta línea para depurar
-            # print(palabras_negativas)
-
-            # Procesa la base de datos
-            tree_data = ET.parse("uploaded.xml")
-            root_data = tree_data.getroot()
-
-            palabras_positivas_contador = 0
-            palabras_negativas_contador = 0
-
-            # Limpia el diccionario
-            palabras_positivas = set(
-                [palabra.strip().lower() for palabra in palabras_positivas]
-            )
-            palabras_negativas = set(
-                [palabra.strip().lower() for palabra in palabras_negativas]
-            )
-
-            for mensaje_elem in root_data.findall(".//MENSAJE"):
-                texto = mensaje_elem.find("TEXTO").text.lower()
-                # print("Texto del mensaje:", texto)
-
-                # Utiliza una expresión regular para dividir el texto en palabras
-                palabras_en_texto = re.findall(r"\b\w+\b", texto)
-                # print("Palabras en el texto:", palabras_en_texto)
-
-                for palabra in palabras_en_texto:
-                    # Elimina caracteres no alfabéticos de la palabra
-                    palabra = re.sub(r"[^a-zA-Z]", "", palabra)
-                    palabra = palabra.lower()  # Convierte la palabra a minúsculas
-
-                    if palabra in palabras_positivas:
-                        palabras_positivas_contador += 1
-                    elif palabra in palabras_negativas:
-                        palabras_negativas_contador += 1
+            # Obtener el recuento de palabras positivas y negativas
+            palabras_positivas_contador = len(sentimientos.palabras_positivas)
+            palabras_negativas_contador = len(sentimientos.palabras_negativas)
 
             # Genera el archivo resumenConfig.xml
             resumen_config = ET.Element("CONFIG_RECIBIDA")
@@ -217,6 +217,63 @@ def consultar_hashtags():
         result.append({"fecha": fecha_str, "hashtags": hashtags})
     # print("hashtags_por_fecha:", hashtags_por_fecha)
     return jsonify({"hashtags_por_fecha": result})
+
+
+@app.route("/consultar-sentimiento", methods=["GET"])
+def consultar_sentimientos():
+    fecha_inicio = request.args.get("fecha_inicio")
+    fecha_fin = request.args.get("fecha_fin")
+
+    if not fecha_inicio or not fecha_fin:
+        return jsonify({"error": "Las fechas de inicio y fin son requeridas"})
+
+    # Convertir las fechas de inicio y fin a objetos datetime
+    fecha_inicio = datetime.strptime(fecha_inicio, "%Y-%m-%d")
+    fecha_fin = datetime.strptime(fecha_fin, "%Y-%m-%d")
+
+    # Procesa el archivo uploaded.xml
+    tree = ET.parse("uploaded.xml")
+    root = tree.getroot()
+    sentimientos_por_fecha = {"positivo": 0, "negativo": 0, "neutro": 0}
+    sentimientos = Sentimientos()
+
+    for mensaje_elem in root.findall(".//MENSAJE"):
+        fecha_str = mensaje_elem.find("FECHA").text.split(", ")[1]
+        fecha = datetime.strptime(fecha_str, "%d/%m/%Y")
+        texto = mensaje_elem.find("TEXTO").text
+
+        if fecha_inicio <= fecha <= fecha_fin:
+            mensaje = Mensajes(fecha, texto)
+            texto_mensaje = mensaje.obtener_texto()
+
+            # Contadores de palabras positivas y negativas en el mensaje
+            contador_positivas = 0
+            contador_negativas = 0
+
+            # Analizar cada palabra del mensaje
+            for palabra in texto_mensaje.split():
+                palabra = palabra.lower()
+                if palabra in sentimientos.palabras_positivas:
+                    contador_positivas += 1
+                elif palabra in sentimientos.palabras_negativas:
+                    contador_negativas += 1
+
+            # Clasificar el mensaje
+            if contador_positivas > contador_negativas:
+                sentimiento = "positivo"
+            elif contador_negativas > contador_positivas:
+                sentimiento = "negativo"
+            else:
+                sentimiento = "neutro"
+
+            # Actualizar el conteo de sentimientos por fecha
+            sentimientos_por_fecha[sentimiento] += 1
+
+    # Formatear las fechas como cadenas de texto
+    result = []
+    for sentimiento, count in sentimientos_por_fecha.items():
+        result.append({"sentimiento": sentimiento, "count": count})
+    return jsonify({"sentimientos_por_fecha": result})
 
 
 @app.route("/consultar-usuarios", methods=["GET"])
