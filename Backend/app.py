@@ -59,6 +59,7 @@ def cargar_xml():
 
             tree = ET.ElementTree(resumen)
             tree.write("uploaded.xml")
+            # print(mensajes)
 
             # Crear el archivo resumen.xml con la información de los mensajes
             resumen_xml = ET.Element("MENSAJES_RECIBIDOS")
@@ -147,10 +148,21 @@ def cargar_configuracion():
                 for palabra_elem in root.findall(".//sentimientos_positivos/palabra"):
                     palabra = palabra_elem.text.strip()
                     sentimientos.palabras_positivas.add(palabra)
+                    # print(f"Agregada palabra positiva: {palabra}")
 
                 for palabra_elem in root.findall(".//sentimientos_negativos/palabra"):
                     palabra = palabra_elem.text.strip()
                     sentimientos.palabras_negativas.add(palabra)
+                    # print(f"Agregada palabra negativa: {palabra}")
+
+                # print(
+                #   "Palabras positivas en la clase Sentimientos:",
+                #   sentimientos.palabras_positivas,
+                # )
+                # print(
+                # "Palabras negativas en la clase Sentimientos:",
+            # sentimientos.palabras_negativas,
+            # )
 
             # Cargar las palabras desde el archivo recién cargado
             tree_nuevo = ET.parse("nuevo_config.xml")
@@ -159,10 +171,12 @@ def cargar_configuracion():
             for palabra_elem in root_nuevo.findall(".//sentimientos_positivos/palabra"):
                 palabra = palabra_elem.text.strip()
                 sentimientos.palabras_positivas.add(palabra)
+                # print(f"Agregada palabra positiva: {palabra}")
 
             for palabra_elem in root_nuevo.findall(".//sentimientos_negativos/palabra"):
                 palabra = palabra_elem.text.strip()
                 sentimientos.palabras_negativas.add(palabra)
+                # print(f"Agregada palabra negativa: {palabra}")
 
             # Actualizar el archivo configuracion.xml
             resumen = ET.Element("diccionario")
@@ -176,6 +190,14 @@ def cargar_configuracion():
                 palabra_elem = ET.SubElement(sentimientos_negativos, "palabra")
                 palabra_elem.text = palabra
 
+            # print(
+            # "Palabras positivas en la clase Sentimientos:",
+            # sentimientos.palabras_positivas,
+            # )
+            # print(
+            #   "Palabras negativas en la clase Sentimientos:",
+            #   sentimientos.palabras_negativas,
+            # )
             tree = ET.ElementTree(resumen)
             tree.write("configuracion.xml")
 
@@ -208,6 +230,15 @@ def cargar_configuracion():
             # Eliminar el archivo temporal del nuevo archivo cargado
             os.remove("nuevo_config.xml")
 
+            # print(
+            #   "Palabras positivas en la clase Sentimientos:",
+            #  sentimientos.palabras_positivas,
+            # )
+            # print(
+            #   "Palabras negativas en la clase Sentimientos:",
+            #  sentimientos.palabras_negativas,
+            # )
+
             return jsonify(
                 {
                     "message": "Archivo de configuración XML procesado y resumen generado."
@@ -227,6 +258,7 @@ def cargar_configuracion():
 def consultar_hashtags():
     fecha_inicio = request.args.get("fecha_inicio")
     fecha_fin = request.args.get("fecha_fin")
+    # print("===================prubea si========================")
 
     if not fecha_inicio or not fecha_fin:
         return jsonify({"error": "Las fechas de inicio y fin son requeridas"})
@@ -270,7 +302,7 @@ def consultar_hashtags():
     return jsonify({"hashtags_por_fecha": result})
 
 
-@app.route("/consultar-sentimiento", methods=["GET"])
+@app.route("/consultar-sentimientos", methods=["GET"])
 def consultar_sentimientos():
     fecha_inicio = request.args.get("fecha_inicio")
     fecha_fin = request.args.get("fecha_fin")
@@ -285,8 +317,21 @@ def consultar_sentimientos():
     # Procesa el archivo uploaded.xml
     tree = ET.parse("uploaded.xml")
     root = tree.getroot()
-    sentimientos_por_fecha = {"positivo": 0, "negativo": 0, "neutro": 0}
-    sentimientos = Sentimientos()
+    tree1 = ET.parse("configuracion.xml")
+    root1 = tree1.getroot()
+
+    sentimientos = Sentimientos()  # Debes inicializar tus sentimientos aquí
+    # Carga palabras positivas
+    for palabra_elem in root1.findall(".//sentimientos_positivos/palabra"):
+        palabra = palabra_elem.text.strip()
+        sentimientos.palabras_positivas.add(palabra)
+
+    # Carga palabras negativas
+    for palabra_elem in root1.findall(".//sentimientos_negativos/palabra"):
+        palabra = palabra_elem.text.strip()
+        sentimientos.palabras_negativas.add(palabra)
+
+    resultados = {}
 
     for mensaje_elem in root.findall(".//MENSAJE"):
         fecha_str = mensaje_elem.find("FECHA").text.split(", ")[1]
@@ -295,35 +340,65 @@ def consultar_sentimientos():
 
         if fecha_inicio <= fecha <= fecha_fin:
             mensaje = Mensajes(fecha, texto)
-            texto_mensaje = mensaje.obtener_texto()
 
-            # Contadores de palabras positivas y negativas en el mensaje
-            contador_positivas = 0
-            contador_negativas = 0
+            # Obtener las palabras en el mensaje
+            palabras = mensaje.texto.split()
 
-            # Analizar cada palabra del mensaje
-            for palabra in texto_mensaje.split():
-                palabra = palabra.lower()
+            palabras_positivas = 0
+            palabras_negativas = 0
+
+            for palabra in palabras:
                 if palabra in sentimientos.palabras_positivas:
-                    contador_positivas += 1
+                    palabras_positivas += 1
                 elif palabra in sentimientos.palabras_negativas:
-                    contador_negativas += 1
+                    palabras_negativas += 1
 
-            # Clasificar el mensaje
-            if contador_positivas > contador_negativas:
+            # Calcular el sentimiento del mensaje
+            if palabras_positivas > palabras_negativas:
                 sentimiento = "positivo"
-            elif contador_negativas > contador_positivas:
+            elif palabras_negativas > palabras_positivas:
                 sentimiento = "negativo"
             else:
                 sentimiento = "neutro"
 
-            # Actualizar el conteo de sentimientos por fecha
-            sentimientos_por_fecha[sentimiento] += 1
+            if fecha not in resultados:
+                resultados[fecha] = {"positivos": 0, "negativos": 0, "neutros": 0}
+
+            if sentimiento == "positivo":
+                resultados[fecha]["positivos"] += 1
+            elif sentimiento == "negativo":
+                resultados[fecha]["negativos"] += 1
+            else:
+                resultados[fecha]["neutros"] += 1
+
+            # print("==============================DEPURACION==========================")
+
+            # print(
+            # "Palabras positivas en la clase Sentimientos:",
+            # sentimientos.palabras_positivas,
+            # )
+            # print(
+            # "Palabras negativas en la clase Sentimientos:",
+            # sentimientos.palabras_negativas,
+            # )
+            # print(f"Palabras en el mensaje ({fecha_str}): {palabras}")
+            # print(f"Palabras positivas en el mensaje: {palabras_positivas}")
+            # print(f"Palabras negativas en el mensaje: {palabras_negativas}")
+            # print(f"Sentimiento del mensaje: {sentimiento}")
 
     # Formatear las fechas como cadenas de texto
     result = []
-    for sentimiento, count in sentimientos_por_fecha.items():
-        result.append({"sentimiento": sentimiento, "count": count})
+    for fecha, sentimientos in resultados.items():
+        fecha_str = fecha.strftime("%d/%m/%Y")
+        result.append(
+            {
+                "fecha": fecha_str,
+                "positivos": sentimientos["positivos"],
+                "negativos": sentimientos["negativos"],
+                "neutros": sentimientos["neutros"],
+            }
+        )
+
     return jsonify({"sentimientos_por_fecha": result})
 
 
@@ -395,7 +470,7 @@ def resetear_datos():
 
     mensaje = Mensajes("", "")
     mensaje.resetear()
-    sent = Sentimientos("", "")
+    sent = Sentimientos()
     sent.resetear_sentimientos()
 
     return "Datos reseteados correctamente", 200

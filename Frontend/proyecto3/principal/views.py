@@ -4,6 +4,7 @@ import requests
 from pathlib import Path
 import xml.dom.minidom
 import os
+from flask import render_template
 
 
 # Create your views here.
@@ -152,7 +153,7 @@ def consultar_usuario(request):
 
             if response.status_code == 200:
                 data = response.json()
-                print("Respuesta JSON:", data)
+                # print("Respuesta JSON:", data)
 
                 # Asegurarse de que "usuarios_por_fecha" sea una lista
                 usuarios_por_fecha = data.get("usuarios_por_fecha", [])
@@ -172,7 +173,7 @@ def consultar_usuario(request):
     return render(request, "consul_usuario.html", {"usuarios_por_fecha": None})
 
 
-def consultar_sent(request):
+def consultar_sentimientos(request):
     if request.method == "GET":
         fecha_inicio = request.GET.get("fecha_inicio")
         fecha_fin = request.GET.get("fecha_fin")
@@ -185,15 +186,21 @@ def consultar_sent(request):
 
             if response.status_code == 200:
                 data = response.json()
-                print("Respuesta JSON:", data)
+                # print("Respuesta JSON:", data)
 
                 # Asegurarse de que "sentimientos_por_fecha" sea una lista
                 sentimientos_por_fecha = data.get("sentimientos_por_fecha", [])
 
+                sorted_data = sorted(
+                    sentimientos_por_fecha,
+                    key=lambda x: datetime.strptime(x["fecha"], "%d/%m/%Y"),
+                )
+
                 return render(
                     request,
                     "consul_sent.html",
-                    {"sentimientos_por_fecha": sentimientos_por_fecha},
+                    {"sentimientos_por_fecha": sorted_data},
                 )
 
     return render(request, "consul_sent.html", {"sentimientos_por_fecha": None})
+    # return render("consul_sent.html", sentimientos_por_fecha=None)

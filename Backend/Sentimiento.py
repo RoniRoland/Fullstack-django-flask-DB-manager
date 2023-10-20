@@ -10,5 +10,5 @@ class Sentimientos:
         )
 
     def resetear_sentimientos(self):
-        self.palabras_positivas = ""
-        self.palabras_negativas = ""
+        self.palabras_positivas = set()
+        self.palabras_negativas = set()

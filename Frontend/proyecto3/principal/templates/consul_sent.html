@@ -18,23 +18,19 @@
     <div class="col-lg-6 mx-auto">
         <br>
         {% if sentimientos_por_fecha %}
-        <h2>Resultados</h2>
-        <ul class="list-group">
-            {% for sentimiento in sentimientos_por_fecha %}
-            <li class="list-group-item">
-                {% if sentimiento.sentimiento == "positivo" %}
-                Mensajes con sentimiento positivo: {{ sentimiento.count }} mensajes
-                {% elif sentimiento.sentimiento == "negativo" %}
-                Mensajes con sentimiento negativo: {{ sentimiento.count }} mensajes
-                {% elif sentimiento.sentimiento == "neutro" %}
-                Mensajes neutros: {{ sentimiento.count }} mensajes
-                {% endif %}
-            </li>
-            {% endfor %}
-        </ul>
+        {% for resultado in sentimientos_por_fecha %}
+        <h2>Fecha: {{ resultado.fecha }}</h2>
+        <ol class="list-group list-group-numbered">
+            <li class="list-group-item">Mensajes con sentimiento positivo: {{ resultado.positivos }} mensajes</li>
+            <li class="list-group-item">Mensajes con sentimiento negativo: {{ resultado.negativos }} mensajes</li>
+            <li class="list-group-item">Mensajes neutros: {{ resultado.neutros }} mensaje</li>
+
+        </ol>
         <br>
+        {% endfor %}
         {% endif %}
     </div>
+
 
 
 
