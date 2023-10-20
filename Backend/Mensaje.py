@@ -17,10 +17,31 @@ class Mensajes:
         return self.texto
 
     def obtener_hashtags(self):
-        return re.findall(r"#\w+", self.texto)
+        return re.findall(r"#\w+#", self.texto)
 
     def obtener_usuarios_mencionados(self):
-        return re.findall(r"@\w+", self.texto)
+        self.texto = self.texto.strip()
+        # print("Texto antes de analizar:", self.texto)
+
+        usuarios = []
+        mencionando = False
+
+        palabras = self.texto.split()
+
+        for palabra in palabras:
+            if palabra.startswith("@"):
+                usuario = palabra.lstrip("@")
+                if usuario and all(char.isalnum() or char == "_" for char in usuario):
+                    usuarios.append("@" + usuario)
+                    mencionando = True
+                else:
+                    mencionando = False
+            elif mencionando:
+                mencionando = False
+
+        # print("Usuarios válidos en este mensaje:", usuarios)
+
+        return usuarios
 
     def resetear(self):
         self.fecha = ""
