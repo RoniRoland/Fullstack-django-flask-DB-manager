@@ -124,10 +124,11 @@ def consultar_hashtags(request):
                 # print("Respuesta JSON:", data)
 
                 # Asegurarse de que "hashtags_por_fecha" sea una lista
-                # hashtags_por_fecha = data.get("hashtags_por_fecha", [])
+                hashtags_por_fecha = data.get("hashtags_por_fecha", [])
+
                 # Ordena la lista de diccionarios por fecha (asumiendo que las fechas son strings en el formato "dd/mm/yyyy")
                 sorted_data = sorted(
-                    data["hashtags_por_fecha"],
+                    hashtags_por_fecha,
                     key=lambda x: datetime.strptime(x["fecha"], "%d/%m/%Y"),
                 )
 
