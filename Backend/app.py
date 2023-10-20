@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 from Mensaje import Mensajes
 from Sentimiento import Sentimientos
 import re
+from unidecode import unidecode
 
 
 app = Flask(__name__)
@@ -17,18 +18,16 @@ CORS(app)
 def cargar_xml():
     try:
         uploaded_file = request.files["archivo"]
+        # print("==========================================================")
         if uploaded_file.filename != "":
-            # Guardar el archivo XML en el servidor
             uploaded_file.save("nuevo_archivo.xml")
+            # print("=============================DEBUGGGGG=============================")
 
-            # Crear una lista para almacenar los mensajes existentes o nuevos mensajes
             mensajes = []
 
-            # Verificar si el archivo uploaded.xml existe
             uploaded_exists = os.path.exists("uploaded.xml")
 
             if uploaded_exists:
-                # Cargar los mensajes existentes desde uploaded.xml
                 tree = ET.parse("uploaded.xml")
                 root = tree.getroot()
                 for mensaje_elem in root.findall(".//MENSAJE"):
@@ -36,19 +35,17 @@ def cargar_xml():
                     texto = mensaje_elem.find("TEXTO").text
                     mensajes.append(Mensajes(fecha, texto))
 
-            # Cargar los nuevos mensajes desde el archivo recién cargado
             tree_nuevo = ET.parse("nuevo_archivo.xml")
             root_nuevo = tree_nuevo.getroot()
             for mensaje_elem in root_nuevo.findall(".//MENSAJE"):
                 fecha = mensaje_elem.find("FECHA").text
                 texto = mensaje_elem.find("TEXTO").text
-                mensaje_nuevo = Mensajes(fecha, texto)
+                texto_limpio = unidecode(texto)
+                mensaje_nuevo = Mensajes(fecha, texto_limpio)
 
-                # Verificar si el mensaje ya existe en la lista de mensajes
                 if mensaje_nuevo not in mensajes:
                     mensajes.append(mensaje_nuevo)
 
-            # Guardar todos los mensajes en uploaded.xml (sobrescribirlo o crearlo si no existe)
             resumen = ET.Element("MENSAJES")
             for mensaje in mensajes:
                 mensaje_elem = ET.SubElement(resumen, "MENSAJE")
@@ -59,63 +56,49 @@ def cargar_xml():
 
             tree = ET.ElementTree(resumen)
             tree.write("uploaded.xml")
-            # print(mensajes)
 
-            # Crear el archivo resumen.xml con la información de los mensajes
             resumen_xml = ET.Element("MENSAJES_RECIBIDOS")
-            fecha_actual = ""
-            mensajes_en_intervalo = 0
-            usuarios_mencionados = set()
-            hashtags_incluidos = set()
+            tiempo_anterior = ""
+            usuarios_mencionados_total = set()
+            hashtags_total = set()
 
             for mensaje in mensajes:
-                fecha = mensaje.fecha.split(", ")[1]
-                if fecha != fecha_actual:
-                    if fecha_actual:
-                        tiempo = ET.SubElement(resumen_xml, "TIEMPO")
-                        fecha_elem = ET.SubElement(tiempo, "FECHA")
-                        fecha_elem.text = fecha_actual
-                        msj_recibidos = ET.SubElement(tiempo, "MSJ_RECIBIDOS")
-                        msj_recibidos.text = str(mensajes_en_intervalo)
-                        usr_mencionados = ET.SubElement(tiempo, "USR_MENCIONADOS")
-                        usr_mencionados.text = str(len(usuarios_mencionados))
-                        hash_incluidos = ET.SubElement(tiempo, "HASH_INCLUIDOS")
-                        hash_incluidos.text = str(len(hashtags_incluidos))
-                    fecha_actual = fecha
-                    mensajes_en_intervalo = 1
-                    usuarios_mencionados = set()
-                    hashtags_incluidos = set()
-                else:
-                    mensajes_en_intervalo += 1
-                usuarios_mencionados.update(
-                    set(
-                        usuario[1:]
-                        for usuario in mensaje.texto.split()
-                        if usuario.startswith("@")
-                    )
-                )
-                hashtags_incluidos.update(
-                    set(
-                        hashtag[1:-1]
-                        for hashtag in mensaje.texto.split()
-                        if hashtag.startswith("#")
-                    )
-                )
+                try:
+                    fecha = mensaje.fecha.split(", ")[1]
+                    usuarios_mencionados = mensaje.obtener_usuarios_mencionados()
+                    hashtags = mensaje.obtener_hashtags()
+                    # print("Usuarios válidos en este mensaje:", usuarios_mencionados)
+
+                    if fecha != tiempo_anterior:
+                        if tiempo_anterior:
+                            tiempo = ET.SubElement(resumen_xml, "TIEMPO")
+                            fecha_elem = ET.SubElement(tiempo, "FECHA")
+                            fecha_elem.text = tiempo_anterior
+                            usr_mencionados = ET.SubElement(tiempo, "USR_MENCIONADOS")
+                            usr_mencionados.text = str(len(usuarios_mencionados_total))
+                            hash_incluidos = ET.SubElement(tiempo, "HASH_INCLUIDOS")
+                            hash_incluidos.text = str(len(hashtags_total))
+                        tiempo_anterior = fecha
+                        usuarios_mencionados_total = set()
+                        hashtags_total = set()
+
+                    usuarios_mencionados_total.update(usuarios_mencionados)
+                    hashtags_total.update(hashtags)
+
+                except Exception as e:
+                    print(f"Error al procesar el mensaje: {str(e)}")
 
             tiempo = ET.SubElement(resumen_xml, "TIEMPO")
             fecha_elem = ET.SubElement(tiempo, "FECHA")
-            fecha_elem.text = fecha_actual
-            msj_recibidos = ET.SubElement(tiempo, "MSJ_RECIBIDOS")
-            msj_recibidos.text = str(mensajes_en_intervalo)
+            fecha_elem.text = tiempo_anterior
             usr_mencionados = ET.SubElement(tiempo, "USR_MENCIONADOS")
-            usr_mencionados.text = str(len(usuarios_mencionados))
+            usr_mencionados.text = str(len(usuarios_mencionados_total))
             hash_incluidos = ET.SubElement(tiempo, "HASH_INCLUIDOS")
-            hash_incluidos.text = str(len(hashtags_incluidos))
+            hash_incluidos.text = str(len(hashtags_total))
 
             tree_resumen = ET.ElementTree(resumen_xml)
             tree_resumen.write("resumen.xml")
 
-            # Eliminar el archivo temporal del nuevo archivo cargado
             os.remove("nuevo_archivo.xml")
 
             return jsonify({"message": "Archivo XML procesado y resumen generado."})
@@ -170,11 +153,17 @@ def cargar_configuracion():
 
             for palabra_elem in root_nuevo.findall(".//sentimientos_positivos/palabra"):
                 palabra = palabra_elem.text.strip()
+
+                palabra = unidecode(palabra)
+
                 sentimientos.palabras_positivas.add(palabra)
                 # print(f"Agregada palabra positiva: {palabra}")
 
             for palabra_elem in root_nuevo.findall(".//sentimientos_negativos/palabra"):
                 palabra = palabra_elem.text.strip()
+
+                palabra = unidecode(palabra)
+
                 sentimientos.palabras_negativas.add(palabra)
                 # print(f"Agregada palabra negativa: {palabra}")
 
@@ -323,12 +312,12 @@ def consultar_sentimientos():
     sentimientos = Sentimientos()  # Debes inicializar tus sentimientos aquí
     # Carga palabras positivas
     for palabra_elem in root1.findall(".//sentimientos_positivos/palabra"):
-        palabra = palabra_elem.text.strip()
+        palabra = palabra_elem.text.strip().lower()
         sentimientos.palabras_positivas.add(palabra)
 
     # Carga palabras negativas
     for palabra_elem in root1.findall(".//sentimientos_negativos/palabra"):
-        palabra = palabra_elem.text.strip()
+        palabra = palabra_elem.text.strip().lower()
         sentimientos.palabras_negativas.add(palabra)
 
     resultados = {}
@@ -348,6 +337,7 @@ def consultar_sentimientos():
             palabras_negativas = 0
 
             for palabra in palabras:
+                palabra = palabra.lower()
                 if palabra in sentimientos.palabras_positivas:
                     palabras_positivas += 1
                 elif palabra in sentimientos.palabras_negativas:
@@ -427,6 +417,7 @@ def consultar_usuarios():
         if fecha_inicio <= fecha <= fecha_fin:
             mensaje = Mensajes(fecha, texto)
             usuarios_mencionados = mensaje.obtener_usuarios_mencionados()
+            # print(usuarios_mencionados)
 
             if fecha not in usuarios_por_fecha:
                 usuarios_por_fecha[fecha] = {}
