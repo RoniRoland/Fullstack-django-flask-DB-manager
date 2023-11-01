@@ -74,6 +74,11 @@ def cargar_xml():
                             tiempo = ET.SubElement(resumen_xml, "TIEMPO")
                             fecha_elem = ET.SubElement(tiempo, "FECHA")
                             fecha_elem.text = tiempo_anterior
+
+                            msj_recibidos_elem = ET.Element("MSJ_RECIBIDOS")
+                            msj_recibidos_elem.text = str(len(mensajes_en_fecha))
+                            tiempo.append(msj_recibidos_elem)
+
                             usr_mencionados = ET.SubElement(tiempo, "USR_MENCIONADOS")
                             usr_mencionados.text = str(len(usuarios_mencionados_total))
                             hash_incluidos = ET.SubElement(tiempo, "HASH_INCLUIDOS")
@@ -81,9 +86,11 @@ def cargar_xml():
                         tiempo_anterior = fecha
                         usuarios_mencionados_total = set()
                         hashtags_total = set()
+                        mensajes_en_fecha = []
 
                     usuarios_mencionados_total.update(usuarios_mencionados)
                     hashtags_total.update(hashtags)
+                    mensajes_en_fecha.append(mensaje)
 
                 except Exception as e:
                     print(f"Error al procesar el mensaje: {str(e)}")
@@ -91,6 +98,11 @@ def cargar_xml():
             tiempo = ET.SubElement(resumen_xml, "TIEMPO")
             fecha_elem = ET.SubElement(tiempo, "FECHA")
             fecha_elem.text = tiempo_anterior
+
+            msj_recibidos_elem = ET.Element("MSJ_RECIBIDOS")
+            msj_recibidos_elem.text = str(len(mensajes_en_fecha))
+            tiempo.append(msj_recibidos_elem)
+
             usr_mencionados = ET.SubElement(tiempo, "USR_MENCIONADOS")
             usr_mencionados.text = str(len(usuarios_mencionados_total))
             hash_incluidos = ET.SubElement(tiempo, "HASH_INCLUIDOS")
