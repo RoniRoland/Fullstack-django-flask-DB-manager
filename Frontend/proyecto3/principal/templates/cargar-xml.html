@@ -43,12 +43,37 @@
         </div>
     </div>
 
+    <br>
+    <br>
+
+    <div class="col">
+        {% if resumen_data %}
+        <h2 class="pb-2 border-bottom">Resumen de la carga del XML</h2>
+        <br>
+        <table class="table table-bordered table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Fecha</th>
+                    <th>Cantidad de mensajes recibidos</th>
+                    <th>Cantidad de usuarios mencionados</th>
+                    <th>Cantidad de hashtags incluidos</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in resumen_data %}
+                <tr>
+                    <td>{{ data.fecha }}</td>
+                    <td>{{ data.msj_recibidos }}</td>
+                    <td>{{ data.usuarios_mencionados }}</td>
+                    <td>{{ data.hashtags_incluidos }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
 
-
-
-
-
+        {% endif %}
+    </div>
 
     <br>
 

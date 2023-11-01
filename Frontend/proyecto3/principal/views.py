@@ -10,6 +10,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from io import BytesIO
 import matplotlib.pyplot as plt
 import numpy as np
+import xml.etree.ElementTree as ET
 
 
 # Create your views here.
@@ -30,6 +31,8 @@ def view_pdf(request):
 def cargar_archivo(request):
     resumen_content = None
     base_content = None
+    resumen_data = []
+
     if request.method == "POST":
         # Procesar el formulario de carga de archivos
         uploaded_file = request.FILES["archivo"]
@@ -57,6 +60,23 @@ def cargar_archivo(request):
             with open(base_file_path, "r") as f:
                 base_content = f.read()
 
+            tree_resumen = ET.parse(resumen_file_path)
+            root_resumen = tree_resumen.getroot()
+
+            for tiempo_elem in root_resumen.findall("TIEMPO"):
+                fecha = tiempo_elem.find("FECHA").text
+                msj_recibidos = tiempo_elem.find("MSJ_RECIBIDOS").text
+                usuarios_mencionados = tiempo_elem.find("USR_MENCIONADOS").text
+                hashtags_incluidos = tiempo_elem.find("HASH_INCLUIDOS").text
+                resumen_data.append(
+                    {
+                        "fecha": fecha,
+                        "msj_recibidos": msj_recibidos,
+                        "usuarios_mencionados": usuarios_mencionados,
+                        "hashtags_incluidos": hashtags_incluidos,
+                    }
+                )
+
             # Formatea el contenido XML
             resumen_content = xml.dom.minidom.parseString(resumen_content).toprettyxml()
             base_content = xml.dom.minidom.parseString(base_content).toprettyxml()
@@ -64,7 +84,11 @@ def cargar_archivo(request):
     return render(
         request,
         "cargar-xml.html",
-        {"resumen_content": resumen_content, "base_content": base_content},
+        {
+            "resumen_data": resumen_data,
+            "resumen_content": resumen_content,
+            "base_content": base_content,
+        },
     )
 
 
