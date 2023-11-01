@@ -3,8 +3,11 @@ from django.shortcuts import render
 import requests
 from pathlib import Path
 import xml.dom.minidom
-import os
-from flask import render_template
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from io import BytesIO
 
 
 # Create your views here.
@@ -141,6 +144,55 @@ def consultar_hashtags(request):
     return render(request, "consul_hash.html", {"hashtags_por_fecha": None})
 
 
+def generar_reporte_hashtags_pdf(request):
+    # Obtén los datos para el informe
+    fecha_inicio = request.GET.get("fecha_inicio")
+    fecha_fin = request.GET.get("fecha_fin")
+
+    # Realiza la llamada a la API de Flask para obtener los datos
+    api_url = "http://127.0.0.1:5000/consultar-hashtags"
+    params = {"fecha_inicio": fecha_inicio, "fecha_fin": fecha_fin}
+    response = requests.get(api_url, params=params)
+
+    if response.status_code == 200:
+        data = response.json()
+        hashtags_por_fecha = data.get("hashtags_por_fecha", [])
+    else:
+        hashtags_por_fecha = []
+
+    # Crea un objeto BytesIO para almacenar el PDF
+    buffer = BytesIO()
+
+    # Crea un documento PDF
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+
+    # Lista de elementos para agregar al PDF
+    elements = []
+
+    # Agrega el título al PDF
+    styles = getSampleStyleSheet()
+    elements.append(Paragraph("Informe de Hashtags", styles["Title"]))
+
+    # Agrega los datos de hashtags al PDF
+    for data in hashtags_por_fecha:
+        elements.append(Paragraph(f"Fecha: {data['fecha']}", styles["Heading1"]))
+        for index, (hashtag, count) in enumerate(data["hashtags"].items(), start=1):
+            elements.append(
+                Paragraph(f"{index}. {hashtag}: {count} mensajes", styles["Normal"])
+            )
+        elements.append(Spacer(1, 12))  # Espacio entre secciones
+
+    # Construye el PDF
+    doc.build(elements)
+
+    # Reinicia el buffer y devuelve el PDF como una respuesta
+    buffer.seek(0)
+    response = HttpResponse(buffer.read(), content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="reporte_hashtag.pdf"'
+
+    return response
+
+
 def consultar_usuario(request):
     if request.method == "GET":
         fecha_inicio = request.GET.get("fecha_inicio")
@@ -172,6 +224,55 @@ def consultar_usuario(request):
                 )
 
     return render(request, "consul_usuario.html", {"usuarios_por_fecha": None})
+
+
+def generar_reporte_usuarios_pdf(request):
+    # Obtén los datos para el informe
+    fecha_inicio = request.GET.get("fecha_inicio")
+    fecha_fin = request.GET.get("fecha_fin")
+
+    # Realiza la llamada a la API de Flask para obtener los datos
+    api_url = "http://127.0.0.1:5000/consultar-usuarios"
+    params = {"fecha_inicio": fecha_inicio, "fecha_fin": fecha_fin}
+    response = requests.get(api_url, params=params)
+
+    if response.status_code == 200:
+        data = response.json()
+        usuarios_por_fecha = data.get("usuarios_por_fecha", [])
+    else:
+        usuarios_por_fecha = []
+
+    # Crea un objeto BytesIO para almacenar el PDF
+    buffer = BytesIO()
+
+    # Crea un documento PDF
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+
+    # Lista de elementos para agregar al PDF
+    elements = []
+
+    # Agrega el título al PDF
+    styles = getSampleStyleSheet()
+    elements.append(Paragraph("Informe de Usuarios", styles["Title"]))
+
+    # Agrega los datos de hashtags al PDF
+    for data in usuarios_por_fecha:
+        elements.append(Paragraph(f"Fecha: {data['fecha']}", styles["Heading1"]))
+        for index, (usuario, count) in enumerate(data["usuarios"].items(), start=1):
+            elements.append(
+                Paragraph(f"{index}. {usuario}: {count} menciones", styles["Normal"])
+            )
+        elements.append(Spacer(1, 12))
+
+    # Construye el PDF
+    doc.build(elements)
+
+    # Reinicia el buffer y devuelve el PDF como una respuesta
+    buffer.seek(0)
+    response = HttpResponse(buffer.read(), content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="reporte_usuarios.pdf"'
+
+    return response
 
 
 def consultar_sentimientos(request):
