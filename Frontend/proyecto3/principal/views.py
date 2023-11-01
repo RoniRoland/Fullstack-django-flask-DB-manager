@@ -306,3 +306,74 @@ def consultar_sentimientos(request):
 
     return render(request, "consul_sent.html", {"sentimientos_por_fecha": None})
     # return render("consul_sent.html", sentimientos_por_fecha=None)
+
+
+def generar_reporte_sentimientos_pdf(request):
+    if request.method == "GET":
+        fecha_inicio = request.GET.get("fecha_inicio")
+        fecha_fin = request.GET.get("fecha_fin")
+
+        if fecha_inicio and fecha_fin:
+            # Llamar a la API de Flask para obtener los sentimientos
+            api_url = "http://127.0.0.1:5000/consultar-sentimientos"
+            params = {"fecha_inicio": fecha_inicio, "fecha_fin": fecha_fin}
+            response = requests.get(api_url, params=params)
+
+            if response.status_code == 200:
+                data = response.json()
+                sentimientos_por_fecha = data.get("sentimientos_por_fecha", [])
+            else:
+                sentimientos_por_fecha = []
+
+            # Crea un objeto BytesIO para almacenar el PDF
+            buffer = BytesIO()
+
+            # Crea un documento PDF
+            doc = SimpleDocTemplate(buffer, pagesize=letter)
+
+            # Lista de elementos para agregar al PDF
+            elements = []
+
+            # Agrega el título al PDF
+            styles = getSampleStyleSheet()
+            elements.append(
+                Paragraph("Informe de Sentimientos en Mensajes", styles["Title"])
+            )
+
+            # Enumera la lista de sentimientos
+            for data in sentimientos_por_fecha:
+                elements.append(
+                    Paragraph(f"Fecha: {data['fecha']}", styles["Heading1"])
+                )
+                elements.append(
+                    Paragraph(
+                        f"Mensajes con sentimiento positivo: {data['positivos']} mensajes",
+                        styles["Normal"],
+                    )
+                )
+                elements.append(
+                    Paragraph(
+                        f"Mensajes con sentimiento negativo: {data['negativos']} mensajes",
+                        styles["Normal"],
+                    )
+                )
+                elements.append(
+                    Paragraph(
+                        f"Mensajes neutros: {data['neutros']} mensaje", styles["Normal"]
+                    )
+                )
+                elements.append(Spacer(1, 12))  # Espacio entre secciones
+
+            # Construye el PDF
+            doc.build(elements)
+
+            # Reinicia el buffer y devuelve el PDF como una respuesta
+            buffer.seek(0)
+            response = HttpResponse(buffer.read(), content_type="application/pdf")
+            response[
+                "Content-Disposition"
+            ] = 'attachment; filename="reporte_sentimientos.pdf"'
+
+            return response
+
+    return render(request, "consul_sent.html", {"sentimientos_por_fecha": None})

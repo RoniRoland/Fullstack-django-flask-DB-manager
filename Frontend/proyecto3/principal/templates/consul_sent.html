@@ -28,6 +28,11 @@
         </ol>
         <br>
         {% endfor %}
+        <form action="{% url 'generar_reporte_sentimientos_pdf' %}" method="get">
+            <input type="hidden" name="fecha_inicio" value="{{ request.GET.fecha_inicio }}">
+            <input type="hidden" name="fecha_fin" value="{{ request.GET.fecha_fin }}">
+            <button class="btn btn-outline-primary" type="submit">Reporte PDF de Sentimientos</button>
+        </form>
         {% endif %}
     </div>
 

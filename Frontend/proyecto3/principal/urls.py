@@ -26,4 +26,9 @@ urlpatterns = [
         views.generar_reporte_usuarios_pdf,
         name="generar_reporte_usuarios_pdf",
     ),
+    path(
+        "generar_reporte_sentimientos_pdf/",
+        views.generar_reporte_sentimientos_pdf,
+        name="generar_reporte_sentimientos_pdf",
+    ),
 ]
