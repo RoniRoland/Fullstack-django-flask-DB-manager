@@ -17,7 +17,8 @@ class Mensajes:
         return self.texto
 
     def obtener_hashtags(self):
-        return re.findall(r"#\w+#", self.texto)
+        texto_en_minusculas = self.texto.lower()
+        return re.findall(r"#\w+#", texto_en_minusculas)
 
     def obtener_usuarios_mencionados(self):
         self.texto = self.texto.strip()
@@ -30,7 +31,7 @@ class Mensajes:
 
         for palabra in palabras:
             if palabra.startswith("@"):
-                usuario = palabra.lstrip("@")
+                usuario = palabra.lstrip("@").lower()
                 if usuario and all(char.isalnum() or char == "_" for char in usuario):
                     usuarios.append("@" + usuario)
                     mencionando = True
