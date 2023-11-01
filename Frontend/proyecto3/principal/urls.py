@@ -3,6 +3,8 @@ from . import views
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("datos_estudiante/", views.datos_estudiante, name="datos_estudiante"),
+    path("ver_pdf/", views.view_pdf, name="ver_pdf"),
     path("cargar-xml/", views.cargar_archivo, name="cargar-xml"),
     path("resetear-datos/", views.resetear_datos, name="resetear_datos"),
     path(

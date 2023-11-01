@@ -17,6 +17,16 @@ def home(request):
     return render(request, "home.html")
 
 
+def datos_estudiante(request):
+    return render(request, "datos_estudiante.html")
+
+
+def view_pdf(request):
+    # Ruta relativa al archivo PDF en la carpeta de archivos estáticos
+    pdf_path = "pdfs/documentacion_ProyectoNO3.pdf"
+    return render(request, "documentacion_pr3.html", {"pdf_path": pdf_path})
+
+
 def cargar_archivo(request):
     resumen_content = None
     base_content = None
