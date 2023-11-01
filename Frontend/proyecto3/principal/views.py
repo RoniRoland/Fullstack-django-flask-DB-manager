@@ -5,9 +5,11 @@ from pathlib import Path
 import xml.dom.minidom
 from django.http import HttpResponse
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet
 from io import BytesIO
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 # Create your views here.
@@ -173,6 +175,8 @@ def generar_reporte_hashtags_pdf(request):
     styles = getSampleStyleSheet()
     elements.append(Paragraph("Informe de Hashtags", styles["Title"]))
 
+    total_hashtags = {}
+
     # Agrega los datos de hashtags al PDF
     for data in hashtags_por_fecha:
         elements.append(Paragraph(f"Fecha: {data['fecha']}", styles["Heading1"]))
@@ -180,7 +184,32 @@ def generar_reporte_hashtags_pdf(request):
             elements.append(
                 Paragraph(f"{index}. {hashtag}: {count} mensajes", styles["Normal"])
             )
+            hashtag = hashtag.lower()
+            if hashtag in total_hashtags:
+                total_hashtags[hashtag] += count
+            else:
+                total_hashtags[hashtag] = count
         elements.append(Spacer(1, 12))  # Espacio entre secciones
+
+    # Crea una gráfica de barras resumida con el recuento total de hashtags y ajusta su tamaño
+    plt.figure(figsize=(8, 6))
+    hashtags = list(total_hashtags.keys())
+    menciones = list(total_hashtags.values())
+    x = np.arange(len(hashtags))
+    plt.bar(x, menciones, align="center")
+    plt.xticks(x, hashtags, rotation=45, fontsize=8)
+    plt.ylabel("Cantidad de Mensajes")
+    plt.title("Hashtags Utilizados (Resumen)")
+
+    # Guarda la gráfica resumida como una imagen temporal
+    temp_image = BytesIO()
+    plt.savefig(temp_image, format="png", bbox_inches="tight")
+    temp_image.seek(0)
+    plt.close()
+
+    # Agrega la gráfica de barras resumida al PDF con un tamaño más grande
+    elements.append(Image(temp_image, width=500, height=400))
+    elements.append(Spacer(1, 12))
 
     # Construye el PDF
     doc.build(elements)
@@ -255,6 +284,8 @@ def generar_reporte_usuarios_pdf(request):
     styles = getSampleStyleSheet()
     elements.append(Paragraph("Informe de Usuarios", styles["Title"]))
 
+    total_menciones = {}
+
     # Agrega los datos de hashtags al PDF
     for data in usuarios_por_fecha:
         elements.append(Paragraph(f"Fecha: {data['fecha']}", styles["Heading1"]))
@@ -262,7 +293,30 @@ def generar_reporte_usuarios_pdf(request):
             elements.append(
                 Paragraph(f"{index}. {usuario}: {count} menciones", styles["Normal"])
             )
+            if usuario in total_menciones:
+                total_menciones[usuario] += count
+            else:
+                total_menciones[usuario] = count
         elements.append(Spacer(1, 12))
+
+    plt.figure(figsize=(8, 6))
+    usuarios = list(total_menciones.keys())
+    menciones = list(total_menciones.values())
+    x = np.arange(len(usuarios))
+    plt.bar(x, menciones, align="center")
+    plt.xticks(x, usuarios, rotation=45, fontsize=8)
+    plt.ylabel("Cantidad de Menciones")
+    plt.title("Usuarios Mencionados (Resumen)")
+
+    # Guarda la gráfica resumida como una imagen temporal
+    temp_image = BytesIO()
+    plt.savefig(temp_image, format="png")
+    temp_image.seek(0)
+    plt.close()
+
+    # Agrega la gráfica de barras resumida al PDF
+    elements.append(Image(temp_image, width=500, height=400))
+    elements.append(Spacer(1, 12))  # Espacio entre secciones
 
     # Construye el PDF
     doc.build(elements)
@@ -325,6 +379,16 @@ def generar_reporte_sentimientos_pdf(request):
             else:
                 sentimientos_por_fecha = []
 
+            # Resumen acumulativo de los datos
+            positivos_total = 0
+            negativos_total = 0
+            neutros_total = 0
+
+            for data in sentimientos_por_fecha:
+                positivos_total += data["positivos"]
+                negativos_total += data["negativos"]
+                neutros_total += data["neutros"]
+
             # Crea un objeto BytesIO para almacenar el PDF
             buffer = BytesIO()
 
@@ -363,6 +427,26 @@ def generar_reporte_sentimientos_pdf(request):
                     )
                 )
                 elements.append(Spacer(1, 12))  # Espacio entre secciones
+
+            # Crear una gráfica de barras
+            plt.figure(figsize=(6, 4))
+            sentimientos = ["Positivos", "Negativos", "Neutros"]
+            counts = [positivos_total, negativos_total, neutros_total]
+            x = np.arange(len(sentimientos))
+            plt.bar(x, counts, align="center")
+            plt.xticks(x, sentimientos)
+            plt.ylabel("Cantidad de Mensajes")
+            plt.title("Sentimientos en Mensajes (Resumen)")
+
+            # Guardar la gráfica como una imagen temporal
+            temp_image = BytesIO()
+            plt.savefig(temp_image, format="png")
+            temp_image.seek(0)
+            plt.close()
+
+            # Agregar la gráfica al PDF
+            elements.append(Image(temp_image, width=400, height=300))
+            elements.append(Spacer(1, 12))  # Espacio entre secciones
 
             # Construye el PDF
             doc.build(elements)
