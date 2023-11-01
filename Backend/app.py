@@ -256,31 +256,36 @@ def consultar_hashtags():
     fecha_inicio = datetime.strptime(fecha_inicio, "%Y-%m-%d")
     fecha_fin = datetime.strptime(fecha_fin, "%Y-%m-%d")
 
-    # Procesa el archivo uploaded.xml
-    tree = ET.parse("uploaded.xml")
-    root = tree.getroot()
-    hashtags_por_fecha = {}
+    try:
+        # Procesa el archivo uploaded.xml
+        tree = ET.parse("uploaded.xml")
+        root = tree.getroot()
+        hashtags_por_fecha = {}
 
-    for mensaje_elem in root.findall(".//MENSAJE"):
-        fecha_str = mensaje_elem.find("FECHA").text.split(", ")[1]
-        fecha = datetime.strptime(fecha_str, "%d/%m/%Y")
-        texto = mensaje_elem.find("TEXTO").text
+        for mensaje_elem in root.findall(".//MENSAJE"):
+            fecha_str = mensaje_elem.find("FECHA").text.split(", ")[1]
+            fecha = datetime.strptime(fecha_str, "%d/%m/%Y")
+            texto = mensaje_elem.find("TEXTO").text
 
-        if fecha_inicio <= fecha <= fecha_fin:
-            mensaje = Mensajes(fecha, texto)
-            hashtags = mensaje.obtener_hashtags()
+            if fecha_inicio <= fecha <= fecha_fin:
+                mensaje = Mensajes(fecha, texto)
+                hashtags = mensaje.obtener_hashtags()
 
-            if fecha not in hashtags_por_fecha:
-                hashtags_por_fecha[fecha] = {}
+                if fecha not in hashtags_por_fecha:
+                    hashtags_por_fecha[fecha] = {}
 
-            hashtag_registrados = set()
-            for hashtag in hashtags:
-                if hashtag not in hashtag_registrados:
-                    hashtag_registrados.add(hashtag)
-                    if hashtag in hashtags_por_fecha[fecha]:
-                        hashtags_por_fecha[fecha][hashtag] += 1
-                    else:
-                        hashtags_por_fecha[fecha][hashtag] = 1
+                hashtag_registrados = set()
+                for hashtag in hashtags:
+                    if hashtag not in hashtag_registrados:
+                        hashtag_registrados.add(hashtag)
+                        if hashtag in hashtags_por_fecha[fecha]:
+                            hashtags_por_fecha[fecha][hashtag] += 1
+                        else:
+                            hashtags_por_fecha[fecha][hashtag] = 1
+
+    except FileNotFoundError:
+        # Si el archivo no existe, puedes retornar un mensaje de error
+        return jsonify({"error": "No existe una base de datos"})
 
     # Formatear las fechas como cadenas de texto
     result = []
@@ -303,78 +308,82 @@ def consultar_sentimientos():
     fecha_inicio = datetime.strptime(fecha_inicio, "%Y-%m-%d")
     fecha_fin = datetime.strptime(fecha_fin, "%Y-%m-%d")
 
-    # Procesa el archivo uploaded.xml
-    tree = ET.parse("uploaded.xml")
-    root = tree.getroot()
-    tree1 = ET.parse("configuracion.xml")
-    root1 = tree1.getroot()
+    try:
+        # Procesa el archivo uploaded.xml
+        tree = ET.parse("uploaded.xml")
+        root = tree.getroot()
+        tree1 = ET.parse("configuracion.xml")
+        root1 = tree1.getroot()
 
-    sentimientos = Sentimientos()  # Debes inicializar tus sentimientos aquí
-    # Carga palabras positivas
-    for palabra_elem in root1.findall(".//sentimientos_positivos/palabra"):
-        palabra = palabra_elem.text.strip().lower()
-        sentimientos.palabras_positivas.add(palabra)
+        sentimientos = Sentimientos()  # Debes inicializar tus sentimientos aquí
+        # Carga palabras positivas
+        for palabra_elem in root1.findall(".//sentimientos_positivos/palabra"):
+            palabra = palabra_elem.text.strip().lower()
+            sentimientos.palabras_positivas.add(palabra)
 
-    # Carga palabras negativas
-    for palabra_elem in root1.findall(".//sentimientos_negativos/palabra"):
-        palabra = palabra_elem.text.strip().lower()
-        sentimientos.palabras_negativas.add(palabra)
+        # Carga palabras negativas
+        for palabra_elem in root1.findall(".//sentimientos_negativos/palabra"):
+            palabra = palabra_elem.text.strip().lower()
+            sentimientos.palabras_negativas.add(palabra)
 
-    resultados = {}
+        resultados = {}
 
-    for mensaje_elem in root.findall(".//MENSAJE"):
-        fecha_str = mensaje_elem.find("FECHA").text.split(", ")[1]
-        fecha = datetime.strptime(fecha_str, "%d/%m/%Y")
-        texto = mensaje_elem.find("TEXTO").text
+        for mensaje_elem in root.findall(".//MENSAJE"):
+            fecha_str = mensaje_elem.find("FECHA").text.split(", ")[1]
+            fecha = datetime.strptime(fecha_str, "%d/%m/%Y")
+            texto = mensaje_elem.find("TEXTO").text
 
-        if fecha_inicio <= fecha <= fecha_fin:
-            mensaje = Mensajes(fecha, texto)
+            if fecha_inicio <= fecha <= fecha_fin:
+                mensaje = Mensajes(fecha, texto)
 
-            # Obtener las palabras en el mensaje
-            palabras = mensaje.texto.split()
+                # Obtener las palabras en el mensaje
+                palabras = mensaje.texto.split()
 
-            palabras_positivas = 0
-            palabras_negativas = 0
+                palabras_positivas = 0
+                palabras_negativas = 0
 
-            for palabra in palabras:
-                palabra = palabra.lower()
-                if palabra in sentimientos.palabras_positivas:
-                    palabras_positivas += 1
-                elif palabra in sentimientos.palabras_negativas:
-                    palabras_negativas += 1
+                for palabra in palabras:
+                    palabra = palabra.lower()
+                    if palabra in sentimientos.palabras_positivas:
+                        palabras_positivas += 1
+                    elif palabra in sentimientos.palabras_negativas:
+                        palabras_negativas += 1
 
-            # Calcular el sentimiento del mensaje
-            if palabras_positivas > palabras_negativas:
-                sentimiento = "positivo"
-            elif palabras_negativas > palabras_positivas:
-                sentimiento = "negativo"
-            else:
-                sentimiento = "neutro"
+                # Calcular el sentimiento del mensaje
+                if palabras_positivas > palabras_negativas:
+                    sentimiento = "positivo"
+                elif palabras_negativas > palabras_positivas:
+                    sentimiento = "negativo"
+                else:
+                    sentimiento = "neutro"
 
-            if fecha not in resultados:
-                resultados[fecha] = {"positivos": 0, "negativos": 0, "neutros": 0}
+                if fecha not in resultados:
+                    resultados[fecha] = {"positivos": 0, "negativos": 0, "neutros": 0}
 
-            if sentimiento == "positivo":
-                resultados[fecha]["positivos"] += 1
-            elif sentimiento == "negativo":
-                resultados[fecha]["negativos"] += 1
-            else:
-                resultados[fecha]["neutros"] += 1
+                if sentimiento == "positivo":
+                    resultados[fecha]["positivos"] += 1
+                elif sentimiento == "negativo":
+                    resultados[fecha]["negativos"] += 1
+                else:
+                    resultados[fecha]["neutros"] += 1
 
-            # print("==============================DEPURACION==========================")
+                # print("==============================DEPURACION==========================")
 
-            # print(
-            # "Palabras positivas en la clase Sentimientos:",
-            # sentimientos.palabras_positivas,
-            # )
-            # print(
-            # "Palabras negativas en la clase Sentimientos:",
-            # sentimientos.palabras_negativas,
-            # )
-            # print(f"Palabras en el mensaje ({fecha_str}): {palabras}")
-            # print(f"Palabras positivas en el mensaje: {palabras_positivas}")
-            # print(f"Palabras negativas en el mensaje: {palabras_negativas}")
-            # print(f"Sentimiento del mensaje: {sentimiento}")
+                # print(
+                # "Palabras positivas en la clase Sentimientos:",
+                # sentimientos.palabras_positivas,
+                # )
+                # print(
+                # "Palabras negativas en la clase Sentimientos:",
+                # sentimientos.palabras_negativas,
+                # )
+                # print(f"Palabras en el mensaje ({fecha_str}): {palabras}")
+                # print(f"Palabras positivas en el mensaje: {palabras_positivas}")
+                # print(f"Palabras negativas en el mensaje: {palabras_negativas}")
+                # print(f"Sentimiento del mensaje: {sentimiento}")
+    except FileNotFoundError:
+        # Si el archivo no existe, puedes retornar un mensaje de error
+        return jsonify({"error": "No existe una base de datos"})
 
     # Formatear las fechas como cadenas de texto
     result = []
@@ -404,32 +413,36 @@ def consultar_usuarios():
     fecha_inicio = datetime.strptime(fecha_inicio, "%Y-%m-%d")
     fecha_fin = datetime.strptime(fecha_fin, "%Y-%m-%d")
 
-    # Procesa el archivo uploaded.xml
-    tree = ET.parse("uploaded.xml")
-    root = tree.getroot()
-    usuarios_por_fecha = {}
+    try:
+        # Procesa el archivo uploaded.xml
+        tree = ET.parse("uploaded.xml")
+        root = tree.getroot()
+        usuarios_por_fecha = {}
 
-    for mensaje_elem in root.findall(".//MENSAJE"):
-        fecha_str = mensaje_elem.find("FECHA").text.split(", ")[1]
-        fecha = datetime.strptime(fecha_str, "%d/%m/%Y")
-        texto = mensaje_elem.find("TEXTO").text
+        for mensaje_elem in root.findall(".//MENSAJE"):
+            fecha_str = mensaje_elem.find("FECHA").text.split(", ")[1]
+            fecha = datetime.strptime(fecha_str, "%d/%m/%Y")
+            texto = mensaje_elem.find("TEXTO").text
 
-        if fecha_inicio <= fecha <= fecha_fin:
-            mensaje = Mensajes(fecha, texto)
-            usuarios_mencionados = mensaje.obtener_usuarios_mencionados()
-            # print(usuarios_mencionados)
+            if fecha_inicio <= fecha <= fecha_fin:
+                mensaje = Mensajes(fecha, texto)
+                usuarios_mencionados = mensaje.obtener_usuarios_mencionados()
+                # print(usuarios_mencionados)
 
-            if fecha not in usuarios_por_fecha:
-                usuarios_por_fecha[fecha] = {}
+                if fecha not in usuarios_por_fecha:
+                    usuarios_por_fecha[fecha] = {}
 
-            usuarios_registrados = set()
-            for usuario in usuarios_mencionados:
-                if usuario not in usuarios_registrados:
-                    usuarios_registrados.add(usuario)
-                    if usuario in usuarios_por_fecha[fecha]:
-                        usuarios_por_fecha[fecha][usuario] += 1
-                    else:
-                        usuarios_por_fecha[fecha][usuario] = 1
+                usuarios_registrados = set()
+                for usuario in usuarios_mencionados:
+                    if usuario not in usuarios_registrados:
+                        usuarios_registrados.add(usuario)
+                        if usuario in usuarios_por_fecha[fecha]:
+                            usuarios_por_fecha[fecha][usuario] += 1
+                        else:
+                            usuarios_por_fecha[fecha][usuario] = 1
+    except FileNotFoundError:
+        # Si el archivo no existe, puedes retornar un mensaje de error
+        return jsonify({"error": "No existe una base de datos"})
 
     # Formatear las fechas como cadenas de texto y usuarios
     result = []
