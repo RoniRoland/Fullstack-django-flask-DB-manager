@@ -39,7 +39,7 @@ def cargar_archivo(request):
 
         # Preparar la solicitud POST a la aplicación Flask
         url = "http://localhost:5000/cargar-xml"  # Reemplaza con la URL de tu aplicación Flask
-        files = {"archivo": ("uploaded.xml", uploaded_file)}
+        files = {"archivo": ("DB_TWEETS.xml", uploaded_file)}
 
         # Realizar la solicitud POST a la aplicación Flask
         response = requests.post(url, files=files)
@@ -50,7 +50,7 @@ def cargar_archivo(request):
 
             # Navega hacia la carpeta "Backend" y accede a "resumen.xml"
             resumen_file_path = current_file.parents[3] / "Backend" / "resumen.xml"
-            base_file_path = current_file.parents[3] / "Backend" / "uploaded.xml"
+            base_file_path = current_file.parents[3] / "Backend" / "DB_TWEETS.xml"
 
             # Lee el archivo resumen.xml generado por Flask
             with open(resumen_file_path, "r") as f:
@@ -77,6 +77,8 @@ def cargar_archivo(request):
                     }
                 )
 
+            resumen_data = sorted(resumen_data, key=lambda x: x["fecha"])
+
             # Formatea el contenido XML
             resumen_content = xml.dom.minidom.parseString(resumen_content).toprettyxml()
             base_content = xml.dom.minidom.parseString(base_content).toprettyxml()
@@ -100,7 +102,7 @@ def cargar_configuracion(request):
     if request.method == "POST":
         uploaded_config_file = request.FILES["config_file"]
         url = "http://localhost:5000/cargar-configuracion"
-        files = {"config_file": ("configuracion.xml", uploaded_config_file)}
+        files = {"config_file": ("DB_CONFIGS_DICT.xml", uploaded_config_file)}
         response = requests.post(url, files=files)
 
         if response.status_code == 200:
@@ -111,7 +113,9 @@ def cargar_configuracion(request):
             resumen_config_file_path = (
                 current_file.parents[3] / "Backend" / "resumenConfig.xml"
             )
-            config_file_path = current_file.parents[3] / "Backend" / "configuracion.xml"
+            config_file_path = (
+                current_file.parents[3] / "Backend" / "DB_CONFIGS_DICT.xml"
+            )
 
             # Lee el archivo resumen.xml generado por Flask
             with open(resumen_config_file_path, "r") as f:

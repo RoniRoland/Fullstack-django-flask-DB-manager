@@ -25,10 +25,10 @@ def cargar_xml():
 
             mensajes = []
 
-            uploaded_exists = os.path.exists("uploaded.xml")
+            uploaded_exists = os.path.exists("DB_TWEETS.xml")
 
             if uploaded_exists:
-                tree = ET.parse("uploaded.xml")
+                tree = ET.parse("DB_TWEETS.xml")
                 root = tree.getroot()
                 for mensaje_elem in root.findall(".//MENSAJE"):
                     fecha = mensaje_elem.find("FECHA").text
@@ -55,7 +55,7 @@ def cargar_xml():
                 texto_elem.text = mensaje.texto
 
             tree = ET.ElementTree(resumen)
-            tree.write("uploaded.xml")
+            tree.write("DB_TWEETS.xml")
 
             resumen_xml = ET.Element("MENSAJES_RECIBIDOS")
             tiempo_anterior = ""
@@ -129,15 +129,15 @@ def cargar_configuracion():
             # Guardar el archivo XML de configuración en el servidor
             uploaded_config_file.save("nuevo_config.xml")
 
-            # Verificar si el archivo configuracion.xml existe
-            config_exists = os.path.exists("configuracion.xml")
+            # Verificar si el archivo DB_CONFIGS_DICT.xml existe
+            config_exists = os.path.exists("DB_CONFIGS_DICT.xml")
 
             # Cargar las palabras de sentimientos positivos y negativos
             sentimientos = Sentimientos()
 
             if config_exists:
-                # Cargar palabras existentes desde configuracion.xml
-                tree = ET.parse("configuracion.xml")
+                # Cargar palabras existentes desde DB_CONFIGS_DICT.xml
+                tree = ET.parse("DB_CONFIGS_DICT.xml")
                 root = tree.getroot()
 
                 for palabra_elem in root.findall(".//sentimientos_positivos/palabra"):
@@ -179,7 +179,7 @@ def cargar_configuracion():
                 sentimientos.palabras_negativas.add(palabra)
                 # print(f"Agregada palabra negativa: {palabra}")
 
-            # Actualizar el archivo configuracion.xml
+            # Actualizar el archivo DB_CONFIGS_DICT.xml
             resumen = ET.Element("diccionario")
             sentimientos_positivos = ET.SubElement(resumen, "sentimientos_positivos")
             for palabra in sentimientos.palabras_positivas:
@@ -200,7 +200,7 @@ def cargar_configuracion():
             #   sentimientos.palabras_negativas,
             # )
             tree = ET.ElementTree(resumen)
-            tree.write("configuracion.xml")
+            tree.write("DB_CONFIGS_DICT.xml")
 
             # Contar las palabras positivas y negativas
             palabras_positivas_rechazadas = len(sentimientos.palabras_positivas) - len(
@@ -269,8 +269,8 @@ def consultar_hashtags():
     fecha_fin = datetime.strptime(fecha_fin, "%Y-%m-%d")
 
     try:
-        # Procesa el archivo uploaded.xml
-        tree = ET.parse("uploaded.xml")
+        # Procesa el archivo DB_TWEETS.xml
+        tree = ET.parse("DB_TWEETS.xml")
         root = tree.getroot()
         hashtags_por_fecha = {}
 
@@ -321,10 +321,10 @@ def consultar_sentimientos():
     fecha_fin = datetime.strptime(fecha_fin, "%Y-%m-%d")
 
     try:
-        # Procesa el archivo uploaded.xml
-        tree = ET.parse("uploaded.xml")
+        # Procesa el archivo DB_TWEETS.xml
+        tree = ET.parse("DB_TWEETS.xml")
         root = tree.getroot()
-        tree1 = ET.parse("configuracion.xml")
+        tree1 = ET.parse("DB_CONFIGS_DICT.xml")
         root1 = tree1.getroot()
 
         sentimientos = Sentimientos()  # Debes inicializar tus sentimientos aquí
@@ -426,8 +426,8 @@ def consultar_usuarios():
     fecha_fin = datetime.strptime(fecha_fin, "%Y-%m-%d")
 
     try:
-        # Procesa el archivo uploaded.xml
-        tree = ET.parse("uploaded.xml")
+        # Procesa el archivo DB_TWEETS.xml
+        tree = ET.parse("DB_TWEETS.xml")
         root = tree.getroot()
         usuarios_por_fecha = {}
 
@@ -470,8 +470,8 @@ def resetear_datos():
     current_file = Path(__file__).resolve()
 
     resumen_file_path = current_file.parents[1] / "Backend" / "resumen.xml"
-    uploaded_file_path = current_file.parents[1] / "Backend" / "uploaded.xml"
-    config_file_path = current_file.parents[1] / "Backend" / "configuracion.xml"
+    uploaded_file_path = current_file.parents[1] / "Backend" / "DB_TWEETS.xml"
+    config_file_path = current_file.parents[1] / "Backend" / "DB_CONFIGS_DICT.xml"
     resumenConfig_file_path = current_file.parents[1] / "Backend" / "resumenConfig.xml"
     files_to_remove = [
         resumen_file_path,
