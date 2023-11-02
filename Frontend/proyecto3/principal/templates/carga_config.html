@@ -43,6 +43,36 @@
     </div>
 
     <br>
+    <br>
+
+    <div class="row">
+        {% if resumen_config_data %}
+        <h2 class="pb-2 border-bottom">Resumen de la carga de Configuracion</h2>
+        <br>
+        <div class="col">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Palabras Positivas</th>
+                        <th>Palabras Positivas Rechazadas</th>
+                        <th>Palabras Negativas</th>
+                        <th>Palabras Negativas Rechazadas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ resumen_config_data.palabras_positivas }}</td>
+                        <td>{{ resumen_config_data.palabras_positivas_rechazadas }}</td>
+                        <td>{{ resumen_config_data.palabras_negativas }}</td>
+                        <td>{{ resumen_config_data.palabras_negativas_rechazadas }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <br>
 
     <form method="post" action="{% url 'resetear_datos' %}">
         {% csrf_token %}

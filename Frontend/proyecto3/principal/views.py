@@ -95,6 +95,8 @@ def cargar_archivo(request):
 def cargar_configuracion(request):
     resumen_config_content = None
     config_content = None
+    resumen_config_data = []
+
     if request.method == "POST":
         uploaded_config_file = request.FILES["config_file"]
         url = "http://localhost:5000/cargar-configuracion"
@@ -118,6 +120,23 @@ def cargar_configuracion(request):
             with open(config_file_path, "r") as f:
                 config_content = f.read()
 
+            config_elem = ET.fromstring(resumen_config_content)
+            palabras_positivas = config_elem.find("PALABRAS_POSITIVAS").text
+            palabras_positivas_rechazadas = config_elem.find(
+                "PALABRAS_POSITIVAS_RECHAZADA"
+            ).text
+            palabras_negativas = config_elem.find("PALABRAS_NEGATIVAS").text
+            palabras_negativas_rechazadas = config_elem.find(
+                "PALABRAS_NEGATIVAS_RECHAZADA"
+            ).text
+
+            resumen_config_data = {
+                "palabras_positivas": palabras_positivas,
+                "palabras_positivas_rechazadas": palabras_positivas_rechazadas,
+                "palabras_negativas": palabras_negativas,
+                "palabras_negativas_rechazadas": palabras_negativas_rechazadas,
+            }
+
             # Formatea el contenido XML
             resumen_config_content = xml.dom.minidom.parseString(
                 resumen_config_content
@@ -129,6 +148,7 @@ def cargar_configuracion(request):
         request,
         "carga_config.html",
         {
+            "resumen_config_data": resumen_config_data,
             "resumen_config_content": resumen_config_content,
             "config_content": config_content,
         },
