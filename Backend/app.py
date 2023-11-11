@@ -275,9 +275,17 @@ def consultar_hashtags():
         hashtags_por_fecha = {}
 
         for mensaje_elem in root.findall(".//MENSAJE"):
-            fecha_str = mensaje_elem.find("FECHA").text.split(", ")[1]
-            fecha = datetime.strptime(fecha_str, "%d/%m/%Y")
+            fecha_str_raw = mensaje_elem.find("FECHA").text.split(", ")[1]
+            fecha_match = re.search(r"\d{2}/\d{2}/\d{4}", fecha_str_raw)
+
             texto = mensaje_elem.find("TEXTO").text
+
+            if fecha_match:
+                fecha_str = fecha_match.group(0)
+                fecha = datetime.strptime(fecha_str, "%d/%m/%Y")
+            else:
+                # Manejar el caso en el que no se encuentra una fecha válida
+                continue
 
             if fecha_inicio <= fecha <= fecha_fin:
                 mensaje = Mensajes(fecha, texto)
